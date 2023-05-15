@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
 const app = express();
@@ -10,7 +11,7 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-console.log(process.env.DB_PASS);
+// console.log(process.env.DB_PASS);
 
 
 
@@ -33,9 +34,23 @@ async function run() {
 
         const serviceCollection = client.db('carDoctors').collection('services');
 
-        const bookingCollection = client.db('carDoctors').collection('bookings')
+        const bookingCollection = client.db('carDoctors').collection('bookings');
 
 
+        // jwt 
+        app.post('/jwt', (req, res) => {
+            const user = req.body;
+            console.log(user);
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+                expiresIn: '10h'
+            });
+            console.log(token);
+            res.send({token});
+        })
+
+
+
+        // services routes
         app.get('/services', async (req, res) => {
             const cursor = serviceCollection.find();
             const result = await cursor.toArray();
@@ -54,7 +69,7 @@ async function run() {
             res.send(result);
         })
 
-        // bookings
+        // bookings routes
         app.get('/bookings', async (req, res) => {
             let query = {};
             if (req.query?.email) {
@@ -81,7 +96,7 @@ async function run() {
                     status: updateBooking.status
                 },
             };
-            const result = await bookingCollection.updateOne(filter,updateDoc);
+            const result = await bookingCollection.updateOne(filter, updateDoc);
             res.send(result);
         })
 
